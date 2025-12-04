@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>World Football Cup 2026 Draw Simulator</title>
+    <title>World Cup 2026 Draw Simulator</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -96,13 +96,12 @@
         const X = (p) => <IconBase {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></IconBase>;
         const BookOpen = (p) => <IconBase {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></IconBase>;
         const ChevronRight = (p) => <IconBase {...p}><polyline points="9 18 15 12 9 6"></polyline></IconBase>;
-        const SoccerBall = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/><path d="M12 2v20"/><path d="M4.93 4.93l14.14 14.14"/><path d="M19.07 4.93L4.93 19.07"/></IconBase>;
 
         // --- TRANSLATIONS & DATA ---
 
         const TRANSLATIONS = {
           en: {
-            title: "World Football Cup 2026 Draw",
+            title: "World Cup 2026 Draw",
             subtitle: "Created by",
             ready: "Ready to start the Official Draw.",
             drawingPot: "Drawing Pot",
@@ -135,7 +134,7 @@
             scanDonate: "Scan or click to donate via PayPal"
           },
           es: {
-            title: "Sorteo Copa Mundial de Fútbol 2026",
+            title: "Sorteo Copa Mundial 2026",
             subtitle: "Creado por",
             ready: "Listo para comenzar el Sorteo Oficial.",
             drawingPot: "Sorteando Bombo",
@@ -589,9 +588,6 @@
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-xl overflow-hidden shadow-sm border border-slate-100 bg-white flex items-center justify-center relative">
                          <img src="logo.jpg" alt="Logo" className="h-full w-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.parentNode.classList.add('bg-blue-600', 'p-2'); e.target.parentNode.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>'; }} />
-                         <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                           <SoccerBall size={14} className="text-slate-800 fill-white" />
-                         </div>
                     </div>
                     <div>
                       <h1 className="text-xl font-bold text-slate-900 leading-none">{t.title}</h1>
@@ -657,13 +653,10 @@
                 </div>
                 <footer className="mt-12 pt-8 border-t border-slate-200 flex flex-col items-center pb-8">
                     <div className="flex flex-col items-center mb-8">
-                        <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg border border-slate-100 bg-white mb-3 flex items-center justify-center relative">
+                        <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg border border-slate-100 bg-white mb-3 flex items-center justify-center">
                              <img src="logo.jpg" alt="Logo" className="h-full w-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.parentNode.classList.add('p-2'); e.target.src='https://ui-avatars.com/api/?name=FIFA+Draw&background=0f172a&color=fff&size=128&font-size=0.33'; e.target.style.display = 'block'; }} />
-                             <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
-                               <SoccerBall size={14} className="text-slate-800 fill-white" />
-                             </div>
                         </div>
-                        <h2 className="text-xl font-bold text-slate-900">World Football Cup 2026 Draw</h2>
+                        <h2 className="text-xl font-bold text-slate-900">{t.title}</h2>
                         <p className="text-xs text-slate-400 mt-1 font-mono">{t.created || "Created by"} Carlos David <a href="https://cdcruzher.com" target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-600 font-bold transition-colors">@cdcruzher</a></p>
                     </div>
                     <p className="text-xs text-slate-400 mb-4 uppercase tracking-wider font-semibold">{t.support || "Support the Project"}</p>
