@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Football Cup 2026 Draw Simulator</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Animations */
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out forwards;
+        }
+
+        @keyframes zoom-in {
+          0% { transform: scale(0.5); opacity: 0; }
+          60% { transform: scale(1.1); opacity: 1; }
+          100% { transform: scale(1); }
+        }
+        .animate-zoom-in {
+          animation: zoom-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        @keyframes bounce-in {
+          0% { transform: scale(0.5); opacity: 0; }
+          50% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); }
+        }
+        .animate-bounce-in {
+          animation: bounce-in 0.6s ease-out forwards;
+        }
+
+        @keyframes firework {
+          0% { transform: translate(0, 0); width: 0; opacity: 1; }
+          50% { width: 0.5rem; opacity: 1; }
+          100% { transform: translate(var(--tx), var(--ty)); width: 0; opacity: 0; }
+        }
+        .animate-firework {
+          animation: firework 0.8s ease-out forwards;
+        }
+        
+        @keyframes progress {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+        .animate-progress-loading {
+          animation: progress 3s linear forwards;
+        }
+        
+        @keyframes bounce-slow {
+           0%, 100% { transform: translateY(-5%); }
+           50% { transform: translateY(5%); }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // --- ICONS (SVG Components) ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const Trophy = (p) => <IconBase {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></IconBase>;
+        const RefreshCw = (p) => <IconBase {...p}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></IconBase>;
+        const Play = (p) => <IconBase {...p}><polygon points="5 3 19 12 5 21 5 3"></polygon></IconBase>;
+        const FastForward = (p) => <IconBase {...p}><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></IconBase>;
+        const Globe2 = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></IconBase>;
+        const AlertCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></IconBase>;
+        const LayoutGrid = (p) => <IconBase {...p}><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></IconBase>;
+        const GitMerge = (p) => <IconBase {...p}><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M6 21V9a9 9 0 0 0 9 9"></path></IconBase>;
+        const X = (p) => <IconBase {...p}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></IconBase>;
+        const BookOpen = (p) => <IconBase {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></IconBase>;
+        const ChevronRight = (p) => <IconBase {...p}><polyline points="9 18 15 12 9 6"></polyline></IconBase>;
+        const SoccerBall = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/><path d="M12 2v20"/><path d="M4.93 4.93l14.14 14.14"/><path d="M19.07 4.93L4.93 19.07"/></IconBase>;
+
+        // --- TRANSLATIONS & DATA ---
+
+        const TRANSLATIONS = {
+          en: {
+            title: "World Football Cup 2026 Draw",
+            subtitle: "Created by",
+            ready: "Ready to start the Official Draw.",
+            drawingPot: "Drawing Pot",
+            drawComplete: "Draw Complete",
+            teamsRemaining: "Teams Remaining",
+            reset: "Reset Draw",
+            drawOne: "Draw One",
+            simulate: "Simulate All",
+            pot: "Pot",
+            group: "Group",
+            allocated: "Allocated to",
+            rank: "World Rank",
+            history: "Tournament History",
+            empty: "Empty",
+            path1: "Path 1",
+            path2: "Path 2",
+            hostA: "Mexico allocated to Group A (Host)",
+            hostB: "Canada allocated to Group B (Host)",
+            hostD: "USA allocated to Group D (Host)",
+            drawnMsg: "goes to Group",
+            drawingFor: "Drawing for...",
+            reveal: "REVEALED",
+            constraintForce: "Constraint Warning: Forced",
+            criticalUEFA: "UEFA Critical: Ensures European presence.",
+            pathwayActive: "Pathways Active (1 & 2)",
+            rotatingPos: "Rotating Positions (Appx B)",
+            strictUEFA: "Min 1 / Max 2 UEFA",
+            created: "Created by",
+            support: "Support the Project",
+            scanDonate: "Scan or click to donate via PayPal"
+          },
+          es: {
+            title: "Sorteo Copa Mundial de Fútbol 2026",
+            subtitle: "Creado por",
+            ready: "Listo para comenzar el Sorteo Oficial.",
+            drawingPot: "Sorteando Bombo",
+            drawComplete: "Sorteo Completado",
+            teamsRemaining: "Equipos Restantes",
+            reset: "Reiniciar",
+            drawOne: "Sortear Uno",
+            simulate: "Simular Todo",
+            pot: "Bombo",
+            group: "Grupo",
+            allocated: "Asignado al",
+            rank: "Ranking Mundial",
+            history: "Historia en Mundiales",
+            empty: "Vacío",
+            path1: "Ruta 1",
+            path2: "Ruta 2",
+            hostA: "México asignado al Grupo A (Anfitrión)",
+            hostB: "Canadá asignado al Grupo B (Anfitrión)",
+            hostD: "EE. UU. asignado al Grupo D (Anfitrión)",
+            drawnMsg: "va al Grupo",
+            drawingFor: "Sorteando para...",
+            reveal: "REVELADO",
+            constraintForce: "Alerta de Restricción: Forzado",
+            criticalUEFA: "UEFA Crítico: Asegura presencia europea.",
+            pathwayActive: "Rutas Activas (1 y 2)",
+            rotatingPos: "Posiciones Rotativas (Apéndice B)",
+            strictUEFA: "Mín 1 / Máx 2 UEFA",
+            created: "Creado por",
+            support: "Apoya el Proyecto",
+            scanDonate: "Escanea o haz clic para donar vía PayPal"
+          }
+        };
+
+        const INITIAL_POTS = {
+          1: [
+            { 
+              name: 'Mexico', name_es: 'México', confed: 'CONCACAF', flag: '🇲🇽', lockedGroup: 'A', ballColor: 'bg-green-600', 
+              history: "Hosting for a record 3rd time (1970, 1986). They have reached the Quarter-finals twice on home soil.",
+              history_es: "Anfitrión por 3ª vez récord (1970, 1986). Han alcanzado los Cuartos de Final dos veces en casa."
+            },
+            { 
+              name: 'Canada', name_es: 'Canadá', confed: 'CONCACAF', flag: '🇨🇦', lockedGroup: 'B', ballColor: 'bg-red-600', 
+              history: "Co-hosts. Appearing in their 3rd World Cup (1986, 2022). Still seeking their first-ever point in the tournament.",
+              history_es: "Coanfitrión. 3ª aparición en el Mundial. Aún buscan su primer punto en el torneo."
+            },
+            { 
+              name: 'USA', name_es: 'EE. UU.', confed: 'CONCACAF', flag: '🇺🇸', lockedGroup: 'D', ballColor: 'bg-blue-600', 
+              history: "Co-hosts. Their best finish was 3rd place in the inaugural 1930 tournament. Reached R16 in 2010, 2014, 2022.",
+              history_es: "Coanfitrión. Su mejor resultado fue 3er lugar en 1930. Llegó a Octavos en 2010, 2014 y 2022."
+            },
+            { name: 'Spain', name_es: 'España', confed: 'UEFA', flag: '🇪🇸', rank: 1, ballColor: 'bg-white border-2 border-slate-300', history: "2010 Champions. Famous for 'tiki-taka'.", history_es: "Campeones en 2010. Famosos por el 'tiki-taka'." },
+            { name: 'Argentina', name_es: 'Argentina', confed: 'CONMEBOL', flag: '🇦🇷', rank: 2, ballColor: 'bg-white border-2 border-slate-300', history: "Defending Champions (2022). 3-time winners.", history_es: "Campeones defensores (2022). 3 veces ganadores." },
+            { name: 'France', name_es: 'Francia', confed: 'UEFA', flag: '🇫🇷', rank: 3, ballColor: 'bg-white border-2 border-slate-300', history: "Two-time Champions (1998, 2018).", history_es: "Bicampeones (1998, 2018)." },
+            { name: 'England', name_es: 'Inglaterra', confed: 'UEFA', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', rank: 4, ballColor: 'bg-white border-2 border-slate-300', history: "1966 Winners.", history_es: "Campeones en 1966." },
+            { name: 'Brazil', name_es: 'Brasil', confed: 'CONMEBOL', flag: '🇧🇷', ballColor: 'bg-white border-2 border-slate-300', history: "5-time Champions.", history_es: "Pentacampeones." },
+            { name: 'Portugal', name_es: 'Portugal', confed: 'UEFA', flag: '🇵🇹', ballColor: 'bg-white border-2 border-slate-300', history: "Euro 2016 Champions.", history_es: "Campeones Euro 2016." },
+            { name: 'Netherlands', name_es: 'Países Bajos', confed: 'UEFA', flag: '🇳🇱', ballColor: 'bg-white border-2 border-slate-300', history: "3-time Runners-up.", history_es: "3 veces subcampeones." },
+            { name: 'Belgium', name_es: 'Bélgica', confed: 'UEFA', flag: '🇧🇪', ballColor: 'bg-white border-2 border-slate-300', history: "3rd place in 2018.", history_es: "3er lugar en 2018." },
+            { name: 'Germany', name_es: 'Alemania', confed: 'UEFA', flag: '🇩🇪', ballColor: 'bg-white border-2 border-slate-300', history: "4-time Champions.", history_es: "Tetracampeones." },
+          ],
+          2: [
+            { name: 'Croatia', name_es: 'Croacia', confed: 'UEFA', flag: '🇭🇷', history: "Runners-up in 2018.", history_es: "Subcampeones 2018." },
+            { name: 'Morocco', name_es: 'Marruecos', confed: 'CAF', flag: '🇲🇦', history: "Semi-finalists in 2022.", history_es: "Semifinalistas 2022." },
+            { name: 'Colombia', name_es: 'Colombia', confed: 'CONMEBOL', flag: '🇨🇴', history: "Quarter-finals in 2014.", history_es: "Cuartos en 2014." },
+            { name: 'Uruguay', name_es: 'Uruguay', confed: 'CONMEBOL', flag: '🇺🇾', history: "First ever Champions (1930).", history_es: "Primer Campeón (1930)." },
+            { name: 'Switzerland', name_es: 'Suiza', confed: 'UEFA', flag: '🇨🇭', history: "Consistent R16 team.", history_es: "Habituales en Octavos." },
+            { name: 'Japan', name_es: 'Japón', confed: 'AFC', flag: '🇯🇵', history: "4-time R16 qualifiers.", history_es: "4 veces en Octavos." },
+            { name: 'Senegal', name_es: 'Senegal', confed: 'CAF', flag: '🇸🇳', history: "African Champions.", history_es: "Campeones de África." },
+            { name: 'IR Iran', name_es: 'Irán', confed: 'AFC', flag: '🇮🇷', history: "Asian powerhouse.", history_es: "Potencia asiática." },
+            { name: 'Korea Republic', name_es: 'Corea del Sur', confed: 'AFC', flag: '🇰🇷', history: "Semi-finalists 2002.", history_es: "Semifinalistas 2002." },
+            { name: 'Ecuador', name_es: 'Ecuador', confed: 'CONMEBOL', flag: '🇪🇨', history: "R16 in 2006.", history_es: "Octavos en 2006." },
+            { name: 'Austria', name_es: 'Austria', confed: 'UEFA', flag: '🇦🇹', history: "3rd place in 1954.", history_es: "3er lugar en 1954." },
+            { name: 'Australia', name_es: 'Australia', confed: 'AFC', flag: '🇦🇺', history: "R16 in 2006 & 2022.", history_es: "Octavos en 2006 y 2022." },
+          ],
+          3: [
+            { name: 'Norway', name_es: 'Noruega', confed: 'UEFA', flag: '🇳🇴', history: "Beat Brazil in 1998.", history_es: "Venció a Brasil en 1998." },
+            { name: 'Panama', name_es: 'Panamá', confed: 'CONCACAF', flag: '🇵🇦', history: "Debut in 2018.", history_es: "Debutó en 2018." },
+            { name: 'Egypt', name_es: 'Egipto', confed: 'CAF', flag: '🇪🇬', history: "First African team in WC.", history_es: "Primer africano en Mundial." },
+            { name: 'Algeria', name_es: 'Argelia', confed: 'CAF', flag: '🇩🇿', history: "R16 in 2014.", history_es: "Octavos en 2014." },
+            { name: 'Scotland', name_es: 'Escocia', confed: 'UEFA', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', history: "8 qualifications.", history_es: "8 clasificaciones." },
+            { name: 'Paraguay', name_es: 'Paraguay', confed: 'CONMEBOL', flag: '🇵🇾', history: "Quarter-finals 2010.", history_es: "Cuartos en 2010." },
+            { name: 'Tunisia', name_es: 'Túnez', confed: 'CAF', flag: '🇹🇳', history: "First African win (1978).", history_es: "Primera victoria africana (1978)." },
+            { name: 'Côte d\'Ivoire', name_es: 'Costa de Marfil', confed: 'CAF', flag: '🇨🇮', history: "Drogba's era.", history_es: "La era de Drogba." },
+            { name: 'Uzbekistan', name_es: 'Uzbekistán', confed: 'AFC', flag: '🇺🇿', history: "Debutants.", history_es: "Debutantes." },
+            { name: 'Qatar', name_es: 'Catar', confed: 'AFC', flag: '🇶🇦', history: "2022 Hosts.", history_es: "Anfitriones 2022." },
+            { name: 'Saudi Arabia', name_es: 'Arabia Saudita', confed: 'AFC', flag: '🇸🇦', history: "Beat Argentina in 2022.", history_es: "Venció a Argentina en 2022." },
+            { name: 'South Africa', name_es: 'Sudáfrica', confed: 'CAF', flag: '🇿🇦', history: "2010 Hosts.", history_es: "Anfitriones 2010." },
+          ],
+          4: [
+            { name: 'Jordan', name_es: 'Jordania', confed: 'AFC', flag: '🇯🇴', history: "Debutants.", history_es: "Debutantes." },
+            { name: 'Cabo Verde', name_es: 'Cabo Verde', confed: 'CAF', flag: '🇨🇻', history: "Smallest nation to qualify.", history_es: "Nación más pequeña en clasificar." },
+            { name: 'Ghana', name_es: 'Ghana', confed: 'CAF', flag: '🇬🇭', history: "Quarter-finals 2010.", history_es: "Cuartos en 2010." },
+            { name: 'Curaçao', name_es: 'Curazao', confed: 'CONCACAF', flag: '🇨🇼', history: "Caribbean debutant.", history_es: "Debutante caribeño." },
+            { name: 'Haiti', name_es: 'Haití', confed: 'CONCACAF', flag: '🇭🇹', history: "Qualified in 1974.", history_es: "Clasificó en 1974." },
+            { name: 'New Zealand', name_es: 'Nueva Zelanda', confed: 'OFC', flag: '🇳🇿', history: "Unbeaten in 2010.", history_es: "Invicto en 2010." },
+            { name: 'UEFA PO A', name_es: 'UEFA PO A', confed: 'UEFA', flag: '🇪🇺', history: "Play-off Winner A.", history_es: "Ganador Play-off A." },
+            { name: 'UEFA PO B', name_es: 'UEFA PO B', confed: 'UEFA', flag: '🇪🇺', history: "Play-off Winner B.", history_es: "Ganador Play-off B." },
+            { name: 'UEFA PO C', name_es: 'UEFA PO C', confed: 'UEFA', flag: '🇪🇺', history: "Play-off Winner C.", history_es: "Ganador Play-off C." },
+            { name: 'UEFA PO D', name_es: 'UEFA PO D', confed: 'UEFA', flag: '🇪🇺', history: "Play-off Winner D.", history_es: "Ganador Play-off D." },
+            { name: 'Int PO 1', name_es: 'Int PO 1', confed: 'PLAYOFF_INT', flag: '🌐', blockedConfeds: ['OFC', 'CONCACAF', 'CAF'], history: "Intercontinental Playoff 1.", history_es: "Repechaje Intercontinental 1." },
+            { name: 'Int PO 2', name_es: 'Int PO 2', confed: 'PLAYOFF_INT', flag: '🌐', blockedConfeds: ['CONMEBOL', 'CONCACAF', 'AFC'], history: "Intercontinental Playoff 2.", history_es: "Repechaje Intercontinental 2." },
+          ],
+        };
+
+        const GROUPS_KEYS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+        const PATHWAY_1 = ['D', 'E', 'F', 'G', 'H', 'I'];
+        const PATHWAY_2 = ['A', 'B', 'C', 'J', 'K', 'L'];
+
+        // --- UTILS ---
+        const shuffleArray = (array) => {
+          const newArray = [...array];
+          for (let i = newArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+          }
+          return newArray;
+        };
+
+        const getAssignedPosition = (groupKey, potIndex) => {
+          if (potIndex === 1) return 1;
+          const groupIndex = GROUPS_KEYS.indexOf(groupKey);
+          const remainder = groupIndex % 3; 
+          if (remainder === 0) return potIndex === 2 ? 3 : potIndex === 3 ? 2 : 4;
+          if (remainder === 1) return potIndex === 2 ? 4 : potIndex === 3 ? 3 : 2;
+          return potIndex === 2 ? 2 : potIndex === 3 ? 4 : 3;
+        };
+
+        const getRemainingUEFACount = (potTeams, currentPotIndex) => {
+          let count = 0;
+          for (let i = currentPotIndex; i <= 4; i++) {
+             if (potTeams[i]) count += potTeams[i].filter(t => t.confed === 'UEFA').length;
+          }
+          return count;
+        };
+
+        const getGroupsWithZeroUEFA = (groups) => {
+          return GROUPS_KEYS.filter(k => !groups[k].some(t => t && t.confed === 'UEFA')).length;
+        };
+
+        const isValidAssignment = (groupTeams, team, groups, strictUEFAConstraint = false) => {
+          const occupiedSlots = groupTeams.filter(t => t).length;
+          if (occupiedSlots >= 4) return false;
+
+          const confedCounts = groupTeams.filter(t => t).reduce((acc, t) => {
+            acc[t.confed] = (acc[t.confed] || 0) + 1;
+            return acc;
+          }, {});
+
+          const teamConfed = team.confed;
+          const groupHasUEFA = (confedCounts['UEFA'] || 0) > 0;
+
+          if (teamConfed === 'UEFA') {
+            if ((confedCounts['UEFA'] || 0) >= 2) return false;
+            if (strictUEFAConstraint && groupHasUEFA) return false;
+          } else if (teamConfed === 'PLAYOFF_INT') {
+            if (team.blockedConfeds) {
+               for (const blocked of team.blockedConfeds) {
+                 if (confedCounts[blocked] && confedCounts[blocked] > 0) return false;
+               }
+            }
+          } else {
+            if ((confedCounts[teamConfed] || 0) >= 1) return false;
+          }
+
+          if (occupiedSlots === 3 && !groupHasUEFA && teamConfed !== 'UEFA') return false;
+          return true;
+        };
+
+        const generateInitialGroups = () => {
+          const groups = {};
+          GROUPS_KEYS.forEach(k => groups[k] = [null, null, null, null]); 
+          return groups;
+        };
+
+        const generateInitialPots = () => {
+          const pots = JSON.parse(JSON.stringify(INITIAL_POTS));
+          const p1 = pots[1];
+          const mexico = p1.find(t => t.name === 'Mexico');
+          const canada = p1.find(t => t.name === 'Canada');
+          const usa = p1.find(t => t.name === 'USA');
+          const others = p1.filter(t => !['Mexico', 'Canada', 'USA'].includes(t.name));
+          pots[1] = [mexico, canada, usa, ...shuffleArray(others)];
+          [2, 3, 4].forEach(key => {
+            pots[key] = shuffleArray(pots[key]);
+          });
+          return pots;
+        };
+
+        // --- COMPONENTS ---
+
+        const Fireworks = () => (
+          <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden">
+            {[...Array(25)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2 h-2 bg-yellow-400 rounded-full animate-firework"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  '--tx': `${(Math.random() - 0.5) * 600}px`,
+                  '--ty': `${(Math.random() - 0.5) * 600}px`,
+                  animationDelay: `${Math.random() * 0.8}s`,
+                  backgroundColor: ['#fbbf24', '#ef4444', '#3b82f6', '#10b981', '#a855f7'][Math.floor(Math.random() * 5)]
+                }}
+              />
+            ))}
+          </div>
+        );
+
+        const DrawPopup = ({ team, assignedGroup, lang }) => {
+          const [stage, setStage] = useState('group');
+          useEffect(() => {
+            const timer = setTimeout(() => setStage('reveal'), 1500);
+            return () => clearTimeout(timer);
+          }, []);
+          const t = TRANSLATIONS[lang];
+          const teamName = lang === 'es' ? (team.name_es || team.name) : team.name;
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
+              {stage === 'reveal' && <Fireworks />}
+              <div className="bg-white rounded-3xl shadow-2xl p-10 max-w-sm w-full text-center relative overflow-hidden transform transition-all animate-zoom-in border-4 border-white/10">
+                <div className="absolute top-0 left-0 w-full h-3 bg-gradient-to-r from-blue-600 via-red-600 to-green-600"></div>
+                {stage === 'group' ? (
+                  <div className="py-12 animate-pulse">
+                    <h3 className="text-xl text-slate-400 font-bold uppercase tracking-widest mb-4">{t.drawingFor}</h3>
+                    <div className="text-8xl font-black text-slate-800">{t.group} {assignedGroup}</div>
+                  </div>
+                ) : (
+                  <div className="animate-bounce-in">
+                    <div className="text-xs font-bold text-blue-600 tracking-widest mb-4 border-b pb-2 border-slate-100">{t.reveal}</div>
+                    <div className="text-9xl mb-4 filter drop-shadow-lg transform hover:scale-110 transition-transform duration-300">{team.flag}</div>
+                    <h2 className="text-4xl font-black text-slate-900 leading-none tracking-tight mb-2">{teamName}</h2>
+                    <div className="inline-block bg-slate-100 text-slate-600 px-4 py-1 rounded-full text-sm font-bold mt-2">{team.confed}</div>
+                    <div className="mt-8 flex items-center justify-center gap-2 text-slate-400 text-sm">
+                       <span>{t.allocated}</span>
+                       <span className="font-bold text-slate-800">{t.group} {assignedGroup}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="mt-8">
+                   <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                     <div className={`h-full bg-blue-500 transition-all duration-[3000ms] ease-linear ${stage==='group' ? 'w-1/2' : 'w-full'}`}></div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const HistoryPopup = ({ team, onClose, lang }) => {
+          const t = TRANSLATIONS[lang];
+          const teamName = lang === 'es' ? (team.name_es || team.name) : team.name;
+          const historyText = lang === 'es' ? (team.history_es || team.history) : team.history;
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-fade-in" onClick={onClose}>
+              <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full relative overflow-hidden animate-zoom-in border-t-4 border-blue-500" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors text-slate-500"><X size={20} /></button>
+                <div className="text-center mb-6">
+                   <div className="text-8xl mb-4 shadow-sm rounded-lg inline-block p-2 bg-slate-50">{team.flag}</div>
+                   <h2 className="text-3xl font-black text-slate-800 tracking-tight">{teamName}</h2>
+                   <div className="flex justify-center gap-2 mt-2">
+                     <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold border border-blue-100"><Globe2 size={12} /> {team.confed}</span>
+                     {team.rank && <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold border border-yellow-100"><Trophy size={12} /> #{team.rank}</span>}
+                   </div>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2"><BookOpen size={14} />{t.history}</h3>
+                  <p className="text-slate-700 leading-relaxed font-medium">{historyText || "History data available."}</p>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const GroupCard = ({ groupLabel, slots, onTeamClick, lang }) => {
+          const t = TRANSLATIONS[lang];
+          return (
+            <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+              <div className={`py-2 px-4 font-bold flex justify-between items-center text-white ${PATHWAY_1.includes(groupLabel) ? 'bg-indigo-900' : 'bg-slate-900'}`}>
+                <span className="flex items-center gap-2">
+                  {t.group} {groupLabel}
+                  {PATHWAY_1.includes(groupLabel) && <span className="text-[10px] bg-indigo-700 px-1 rounded">{t.path1}</span>}
+                  {PATHWAY_2.includes(groupLabel) && <span className="text-[10px] bg-slate-700 px-1 rounded">{t.path2}</span>}
+                </span>
+                <span className="text-xs font-normal opacity-70">{slots.filter(s => s).length}/4</span>
+              </div>
+              <div className="p-3 flex-1 space-y-2">
+                {slots.map((team, idx) => (
+                  <div key={idx} onClick={() => team && onTeamClick(team)} className={`relative flex items-center gap-3 p-2 rounded-lg border transition-all ${team ? 'bg-slate-50 border-slate-200 animate-fade-in cursor-pointer hover:bg-blue-50 hover:border-blue-200 hover:shadow-sm group' : 'bg-transparent border-slate-100 border-dashed'} min-h-[50px]`}>
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-300 font-mono pointer-events-none">{idx + 1}</div>
+                    {team ? (
+                      <>
+                        {team.ballColor && <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-lg ${team.ballColor}`}></div>}
+                        <span className="text-2xl select-none min-w-[32px] text-center" role="img" aria-label={`Flag`}>{team.flag}</span>
+                        <div className="flex flex-col leading-tight z-10">
+                          <span className="font-semibold text-slate-800 text-sm group-hover:text-blue-700 transition-colors">{lang === 'es' ? (team.name_es || team.name) : team.name}</span>
+                          <span className="text-[10px] text-slate-500 uppercase font-tracking-wider flex gap-1 items-center">{team.confed}</span>
+                        </div>
+                        <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity text-blue-400"><ChevronRight size={16} /></div>
+                      </>
+                    ) : (
+                       <span className="text-xs text-slate-300 w-full text-center">{t.empty}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        };
+
+        const App = () => {
+          const [lang, setLang] = useState('en');
+          const [groups, setGroups] = useState(generateInitialGroups);
+          const [potTeams, setPotTeams] = useState(generateInitialPots);
+          const [currentPotIndex, setCurrentPotIndex] = useState(1);
+          const [drawHistory, setDrawHistory] = useState([]);
+          const [isComplete, setIsComplete] = useState(false);
+          const [message, setMessage] = useState("");
+          const [isAutoDrawing, setIsAutoDrawing] = useState(false);
+          const [drawingState, setDrawingState] = useState(null);
+          const [selectedHistoryTeam, setSelectedHistoryTeam] = useState(null);
+
+          const t = TRANSLATIONS[lang];
+
+          useEffect(() => { setMessage(t.ready); }, [lang]);
+
+          const resetDraw = useCallback(() => {
+            setGroups(generateInitialGroups());
+            setPotTeams(generateInitialPots());
+            setCurrentPotIndex(1);
+            setDrawHistory([]);
+            setIsComplete(false);
+            setMessage(TRANSLATIONS[lang].ready);
+            setIsAutoDrawing(false);
+            setDrawingState(null);
+            setSelectedHistoryTeam(null);
+          }, [lang]);
+
+          const calculateNextDraw = useCallback(() => {
+            if (isComplete) return null;
+            const currentPotList = potTeams[currentPotIndex];
+            if (!currentPotList || currentPotList.length === 0) return { type: 'NEXT_POT' };
+
+            const teamToDraw = currentPotList[0];
+            let assignedGroup = null;
+            const remainingUEFA = getRemainingUEFACount(potTeams, currentPotIndex);
+            const zeroUEFAGroups = getGroupsWithZeroUEFA(groups);
+            const isCriticalUEFA = (remainingUEFA === zeroUEFAGroups);
+            const strictUEFAConstraint = isCriticalUEFA && teamToDraw.confed === 'UEFA';
+
+            if (teamToDraw.lockedGroup) {
+              assignedGroup = teamToDraw.lockedGroup;
+            } else {
+              let potentialGroups;
+              if (currentPotIndex === 1) {
+                potentialGroups = GROUPS_KEYS.filter(k => groups[k][0] === null);
+              } else {
+                potentialGroups = GROUPS_KEYS.filter(k => isValidAssignment(groups[k], teamToDraw, groups, strictUEFAConstraint));
+              }
+
+              if (teamToDraw.rank >= 1 && teamToDraw.rank <= 4) {
+                 const partnerRank = (teamToDraw.rank % 2 !== 0) ? teamToDraw.rank + 1 : teamToDraw.rank - 1;
+                 let partnerGroup = null;
+                 GROUPS_KEYS.forEach(k => { if (groups[k].some(t => t && t.rank === partnerRank)) partnerGroup = k; });
+                 if (partnerGroup) {
+                    const partnerPathway = PATHWAY_1.includes(partnerGroup) ? 1 : 2;
+                    const targetGroups = (partnerPathway === 1) ? PATHWAY_2 : PATHWAY_1;
+                    const strictMatch = potentialGroups.find(g => targetGroups.includes(g));
+                    assignedGroup = strictMatch || potentialGroups[0];
+                 } else {
+                     assignedGroup = potentialGroups[0];
+                 }
+              } else {
+                 assignedGroup = potentialGroups[0];
+              }
+            }
+
+            if (!assignedGroup) assignedGroup = GROUPS_KEYS.find(k => groups[k].filter(t => t).length < 4);
+            const slotIndex = getAssignedPosition(assignedGroup, currentPotIndex) - 1;
+            return { type: 'DRAWN', team: teamToDraw, group: assignedGroup, slotIndex };
+          }, [groups, potTeams, currentPotIndex, isComplete]);
+
+          const executeDrawUpdate = useCallback((drawResult) => {
+            if (drawResult.type === 'NEXT_POT') {
+              if (currentPotIndex < 4) {
+                setCurrentPotIndex(prev => prev + 1);
+                setMessage(`${TRANSLATIONS[lang].drawingPot} ${currentPotIndex + 1}...`);
+              } else {
+                setIsComplete(true);
+                setMessage(TRANSLATIONS[lang].drawComplete);
+                setIsAutoDrawing(false);
+              }
+              return;
+            }
+            const { team, group, slotIndex } = drawResult;
+            const teamName = lang === 'es' ? (team.name_es || team.name) : team.name;
+            if (team.name === 'Mexico') setMessage(TRANSLATIONS[lang].hostA);
+            else if (team.name === 'Canada') setMessage(TRANSLATIONS[lang].hostB);
+            else if (team.name === 'USA') setMessage(TRANSLATIONS[lang].hostD);
+            else setMessage(`${teamName} ${TRANSLATIONS[lang].drawnMsg} ${group}`);
+
+            const newGroupSlots = [...groups[group]];
+            if (newGroupSlots[slotIndex] !== null) {
+               const emptyIdx = newGroupSlots.findIndex(s => s === null);
+               newGroupSlots[emptyIdx] = team;
+            } else {
+               newGroupSlots[slotIndex] = team;
+            }
+            const updatedGroups = { ...groups, [group]: newGroupSlots };
+            const updatedPotList = potTeams[currentPotIndex].slice(1);
+            setGroups(updatedGroups);
+            setPotTeams(prev => ({ ...prev, [currentPotIndex]: updatedPotList }));
+            setDrawHistory(prev => [`${teamName} → ${TRANSLATIONS[lang].group} ${group}`, ...prev]);
+          }, [groups, potTeams, currentPotIndex, lang]);
+
+          const handleDrawOne = () => {
+            if (drawingState) return; 
+            const result = calculateNextDraw();
+            if (!result) return;
+            if (result.type === 'NEXT_POT') {
+              executeDrawUpdate(result);
+            } else {
+              setDrawingState(result);
+              setTimeout(() => {
+                executeDrawUpdate(result);
+                setDrawingState(null);
+              }, 3500); 
+            }
+          };
+
+          useEffect(() => {
+            let timeout;
+            if (isAutoDrawing && !isComplete) {
+              timeout = setTimeout(() => {
+                const result = calculateNextDraw();
+                if (result) executeDrawUpdate(result);
+              }, 50); 
+            }
+            return () => clearTimeout(timeout);
+          }, [isAutoDrawing, isComplete, calculateNextDraw, executeDrawUpdate]);
+
+          const handleSimulateAll = () => setIsAutoDrawing(true);
+          const currentPotTeamsCount = (potTeams[currentPotIndex] || []).length;
+
+          return (
+            <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-100">
+              {drawingState && drawingState.type === 'DRAWN' && <DrawPopup team={drawingState.team} assignedGroup={drawingState.group} lang={lang} />}
+              {selectedHistoryTeam && <HistoryPopup team={selectedHistoryTeam} onClose={() => setSelectedHistoryTeam(null)} lang={lang} />}
+              <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-xl overflow-hidden shadow-sm border border-slate-100 bg-white flex items-center justify-center relative">
+                         <img src="logo.jpg" alt="Logo" className="h-full w-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.parentNode.classList.add('bg-blue-600', 'p-2'); e.target.parentNode.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>'; }} />
+                         <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                           <SoccerBall size={14} className="text-slate-800 fill-white" />
+                         </div>
+                    </div>
+                    <div>
+                      <h1 className="text-xl font-bold text-slate-900 leading-none">{t.title}</h1>
+                      <span className="text-xs font-medium text-slate-500 uppercase tracking-widest flex items-center gap-1">{t.subtitle} Carlos David <a href="https://cdcruzher.com" target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-600 font-bold transition-colors">@cdcruzher</a></span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-slate-100 px-4 py-2 rounded-full border border-slate-200">
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <span className={`w-2 h-2 rounded-full ${isComplete ? 'bg-green-500' : 'bg-blue-500 animate-pulse'}`}></span>
+                      {isComplete ? t.drawComplete : `${t.drawingPot} ${currentPotIndex}`}
+                    </div>
+                    <div className="h-4 w-px bg-slate-300"></div>
+                    <div className="text-xs text-slate-500">{t.teamsRemaining}: <span className="font-mono font-bold text-slate-700">{currentPotTeamsCount}</span></div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setLang(l => l === 'en' ? 'es' : 'en')} className="p-2 bg-slate-800 text-white hover:bg-slate-700 rounded-lg transition-colors border border-transparent shadow-sm flex items-center gap-2 text-xs font-bold" title="Switch Language"><span>{lang === 'en' ? 'EN' : 'ES'}</span><span className="text-slate-400">|</span><span className="text-lg leading-none">{lang === 'en' ? '🇺🇸' : '🇪🇸'}</span></button>
+                    <button onClick={resetDraw} disabled={!!drawingState} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors border border-transparent hover:border-slate-200 disabled:opacity-50" title={t.reset}><RefreshCw size={20} /></button>
+                    <button onClick={handleDrawOne} disabled={isComplete || isAutoDrawing || !!drawingState} className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 shadow-sm rounded-lg hover:bg-slate-50 active:scale-95 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"><Play size={16} className="fill-slate-600 text-slate-600" />{t.drawOne}</button>
+                    <button onClick={handleSimulateAll} disabled={isComplete || isAutoDrawing || !!drawingState} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white shadow-md shadow-blue-200 rounded-lg hover:bg-blue-700 active:scale-95 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"><FastForward size={16} className="fill-white" />{t.simulate}</button>
+                  </div>
+                </div>
+              </header>
+              <main className="max-w-7xl mx-auto px-4 py-8">
+                <div className="mb-8 flex flex-col md:flex-row gap-6">
+                  <div className="flex-1"><h2 className="text-2xl font-bold mb-2">{t.group}s</h2><p className="text-slate-500 text-sm">{message}</p></div>
+                  <div className="flex flex-wrap gap-4 overflow-x-auto pb-2 text-xs md:text-sm">
+                    <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-200 shadow-sm whitespace-nowrap"><span className="w-2 h-2 rounded-full bg-green-500"></span> MEX</div>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-200 shadow-sm whitespace-nowrap"><span className="w-2 h-2 rounded-full bg-red-500"></span> CAN</div>
+                     <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-200 shadow-sm whitespace-nowrap"><span className="w-2 h-2 rounded-full bg-blue-500"></span> USA</div>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-200 shadow-sm whitespace-nowrap"><LayoutGrid size={14} className="text-purple-500"/> {t.rotatingPos}</div>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full border border-indigo-200 shadow-sm whitespace-nowrap text-indigo-700"><GitMerge size={14} /> {t.pathwayActive}</div>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-200 shadow-sm whitespace-nowrap"><AlertCircle size={14} className="text-orange-500"/> {t.strictUEFA}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+                  {GROUPS_KEYS.map((key) => <GroupCard key={key} groupLabel={key} slots={groups[key]} onTeamClick={setSelectedHistoryTeam} lang={lang} />)}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 space-y-6">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><span className="w-1 h-6 bg-slate-800 rounded-full"></span>{t.teamsRemaining}</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {[1, 2, 3, 4].map(potNum => {
+                        const isCurrent = potNum === currentPotIndex;
+                        const teamsInPot = potTeams[potNum] || [];
+                        return (
+                          <div key={potNum} className={`p-4 rounded-xl border transition-all ${isCurrent ? 'bg-white border-blue-400 ring-2 ring-blue-100 shadow-sm' : 'bg-slate-50 border-slate-200 opacity-80'}`}>
+                            <div className="flex justify-between items-center mb-3"><span className={`font-bold ${isCurrent ? 'text-blue-700' : 'text-slate-500'}`}>{t.pot} {potNum}</span><span className="text-xs bg-slate-200 px-2 py-1 rounded-md text-slate-600">{teamsInPot.length}</span></div>
+                            {teamsInPot.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">{teamsInPot.map(t => <div key={t.name} className="text-xl cursor-help" title={lang === 'es' ? (t.name_es || t.name) : t.name}>{t.flag}</div>)}</div>
+                            ) : (<div className="text-xs text-slate-400 italic">{t.empty}</div>)}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-96 lg:h-auto">
+                    <div className="p-4 border-b border-slate-100 bg-slate-50 rounded-t-xl"><h3 className="font-bold text-slate-700">Live Feed</h3></div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-xs md:text-sm">
+                      {drawHistory.length === 0 && <div className="text-center text-slate-400 py-10">...</div>}
+                      {drawHistory.map((log, idx) => <div key={idx} className="flex gap-2 animate-fade-in text-slate-600"><span className="text-slate-300">{drawHistory.length - idx}.</span><span>{log}</span></div>)}
+                    </div>
+                  </div>
+                </div>
+                <footer className="mt-12 pt-8 border-t border-slate-200 flex flex-col items-center pb-8">
+                    <div className="flex flex-col items-center mb-8">
+                        <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg border border-slate-100 bg-white mb-3 flex items-center justify-center relative">
+                             <img src="logo.jpg" alt="Logo" className="h-full w-full object-cover" onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.parentNode.classList.add('p-2'); e.target.src='https://ui-avatars.com/api/?name=FIFA+Draw&background=0f172a&color=fff&size=128&font-size=0.33'; e.target.style.display = 'block'; }} />
+                             <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                               <SoccerBall size={14} className="text-slate-800 fill-white" />
+                             </div>
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-900">World Football Cup 2026 Draw</h2>
+                        <p className="text-xs text-slate-400 mt-1 font-mono">{t.created || "Created by"} Carlos David <a href="https://cdcruzher.com" target="_blank" rel="noreferrer" className="text-blue-500 hover:text-blue-600 font-bold transition-colors">@cdcruzher</a></p>
+                    </div>
+                    <p className="text-xs text-slate-400 mb-4 uppercase tracking-wider font-semibold">{t.support || "Support the Project"}</p>
+                    <a href="https://www.paypal.com/donate/?business=6EN68NHUTM2KQ&no_recurring=0&item_name=Thanks+for+your+support+Amigo%21&currency_code=USD" target="_blank" rel="noreferrer" className="block w-32 h-32 bg-white p-2 rounded-xl border border-slate-200 hover:shadow-lg hover:scale-105 transition-all cursor-pointer">
+                        <img src="qrcode.jpg" alt="Donate" className="w-full h-full object-contain" onError={(e) => e.target.src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https%3A%2F%2Fwww.paypal.com%2Fdonate%2F%3Fbusiness%3D6EN68NHUTM2KQ%26no_recurring%3D0%26item_name%3DThanks%2Bfor%2Byour%2Bsupport%2BAmigo%21%26currency_code%3DUSD'} />
+                    </a>
+                    <p className="text-[10px] text-slate-400 mt-3 text-center">{t.scanDonate || "Scan or click to donate via PayPal"}</p>
+                </footer>
+              </main>
+              <style jsx global>{`
+                @keyframes fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+                .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+                @keyframes zoom-in { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
+                .animate-zoom-in { animation: zoom-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+                @keyframes bounce-in { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); } }
+                .animate-bounce-in { animation: bounce-in 0.6s ease-out forwards; }
+                @keyframes firework { 0% { transform: translate(0, 0); width: 0; opacity: 1; } 50% { width: 0.5rem; opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)); width: 0; opacity: 0; } }
+                .animate-firework { animation: firework 0.8s ease-out forwards; }
+                @keyframes bounce-slow { 0%, 100% { transform: translateY(-5%); } 50% { transform: translateY(5%); } }
+                .animate-bounce-slow { animation: bounce-slow 2s infinite ease-in-out; }
+              `}</style>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
+
